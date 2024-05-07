@@ -82,7 +82,8 @@ void Windeploy::on_pushButtonDeploy_clicked()
 				QString file_src = "C:\\Qt\\windeployqt\\Руками добавил для mingw73_32 ++\\libgcc_s_dw2-1.dll";
 				QString fileName = QFileInfo(file_src).fileName();
 				QString file_dst = QFileInfo(ui->listWidget->item(i)->text()).path() + "/" + fileName;
-				QFile::copy(file_src, file_dst);
+				if(QFile::exists(file_src)) QFile::copy(file_src, file_dst);
+				else QMessageBox::warning(this, "File not found", "File " + file_src + " not found");
 			}
 			if(ui->checkBox_libstdcpp_6_dll->isChecked())
 			{
@@ -90,7 +91,8 @@ void Windeploy::on_pushButtonDeploy_clicked()
 				QString file_src = "C:\\Qt\\windeployqt\\Руками добавил для mingw73_32 ++\\libstdc++-6.dll";
 				QString fileName = QFileInfo(file_src).fileName();
 				QString file_dst = QFileInfo(ui->listWidget->item(i)->text()).path() + "/" + fileName;
-				QFile::copy(file_src, file_dst);
+				if(QFile::exists(file_src)) QFile::copy(file_src, file_dst);
+				else QMessageBox::warning(this, "File not found", "File " + file_src + " not found");
 			}
 			if(ui->checkBox_libwinpthread_1_dll->isChecked())
 			{
@@ -98,7 +100,8 @@ void Windeploy::on_pushButtonDeploy_clicked()
 				QString file_src = "C:\\Qt\\windeployqt\\Руками добавил для mingw73_32 ++\\libwinpthread-1.dll";
 				QString fileName = QFileInfo(file_src).fileName();
 				QString file_dst = QFileInfo(ui->listWidget->item(i)->text()).path() + "/" + fileName;
-				QFile::copy(file_src, file_dst);
+				if(QFile::exists(file_src)) QFile::copy(file_src, file_dst);
+				else QMessageBox::warning(this, "File not found", "File " + file_src + " not found");
 			}
 
 		}
