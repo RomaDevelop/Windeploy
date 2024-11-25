@@ -37,8 +37,7 @@ private slots:
 
 	void on_pushButtonDeploy_clicked();
 
-	void on_pushButton_clicked();
-
+	void on_btnSelectFile_clicked();
 	void on_pushButtonClear_clicked();
 
 	void on_btnDeployKits_clicked();

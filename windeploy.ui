@@ -27,7 +27,7 @@
      <string>Deploy</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton">
+   <widget class="QPushButton" name="btnSelectFile">
     <property name="geometry">
      <rect>
       <x>10</x>
@@ -38,16 +38,6 @@
     </property>
     <property name="text">
      <string>Select file</string>
-    </property>
-   </widget>
-   <widget class="QListWidget" name="listWidget">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>10</y>
-      <width>781</width>
-      <height>31</height>
-     </rect>
     </property>
    </widget>
    <widget class="QPushButton" name="pushButtonClear">
@@ -84,6 +74,21 @@
       <width>781</width>
       <height>381</height>
      </rect>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="editFile">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>10</y>
+      <width>781</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>12</pointsize>
+     </font>
     </property>
    </widget>
   </widget>

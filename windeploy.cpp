@@ -22,6 +22,7 @@ using namespace std;
 #include "MyQDialogs.h"
 #include "MyQDifferent.h"
 #include "MyQShortings.h"
+#include "MyQFileDir.h"
 
 bool CheckFile(const QString &file)
 {
@@ -94,16 +95,17 @@ void Windeploy::KitsToTable()
 		vlo->setContentsMargins(0,0,0,0);
 		hlo->setContentsMargins(0,0,0,0);
 
-		auto rBtn = new QRadioButton(kit.windployFile);
+		auto rBtn = new QRadioButton(kit.name);
 		rBtns.push_back(rBtn);
 		hlo->addSpacing(10);
-		hlo->addWidget(rBtn);
+		if(kit.name != KeyWords::unnamedKit)
+			hlo->addWidget(rBtn);
 		vlo->addLayout(hlo);
 
 		vector<QCheckBox*> chBoxesOfThisKit;
-		for(auto &adFile:kit.addFiles)
+		for(auto &kitElement:kit.elements)
 		{
-			chBoxes.push_back(new QCheckBox(adFile));
+			chBoxes.push_back(new QCheckBox(kitElement.text));
 			chBoxesOfThisKit.push_back(chBoxes.back());
 			auto hlo = new QHBoxLayout;
 			hlo->setContentsMargins(0,0,0,0);
@@ -144,24 +146,26 @@ void Windeploy::dropEvent(QDropEvent* event)
 
 	if(CheckFile(droped))
 	{
-		ui->listWidget->clear();
-		ui->listWidget->addItem(droped);
+		ui->editFile->clear();
+		ui->editFile->setText(droped);
 	}
 }
 
 void Windeploy::on_pushButtonDeploy_clicked()
 {
+	if(ui->editFile->text().isEmpty()) return;
+
 	QString bat;
 	//bat += "chcp 1251\n";
 
-	QString windploy;
-	QFileInfoList addFiles;
+	QString kitName;
+	std::vector<KitElement> checkedKitEls;
 	for(auto &rbtn:rBtns)
 	{
 		if(rbtn->isChecked())
 		{
-			if(windploy.isEmpty())
-				windploy = rbtn->text();
+			if(kitName.isEmpty())
+				kitName = rbtn->text();
 			else
 			{
 				QMessageBox::critical(this,"Error", "More one deploy kit selected!");
@@ -170,71 +174,75 @@ void Windeploy::on_pushButtonDeploy_clicked()
 		}
 	}
 
-	if(windploy.isEmpty())
-	{
-		QMessageBox::information(this,"Error", "Deploy kit not selected!");
-		return;
-	}
-
 	for(auto &chBox:chBoxes)
 	{
 		if(chBox->isChecked())
 		{
-			addFiles.push_back(QFileInfo(chBox->text()));
+			checkedKitEls.emplace_back(KitElement::FromText(chBox->text()));
 		}
 	}
 
-	for(auto &file:addFiles)
-		if(!file.isFile())
+	int countWindeploy = 0;
+	for(auto &kitEl:checkedKitEls)
+	{
+		if(!kitEl.fileInfo.isFile())
 		{
-			QMessageBox::warning(this, "File not found", "File " + file.filePath() + " not found");
+			QMbc(this, "File not found", "File " + kitEl.fileInfo.filePath() + " not found");
 			return;
 		}
 
-	for(int i=0; i<ui->listWidget->count(); i++)
+		if(kitEl.type == KitElement::windeploy) countWindeploy++;
+	}
+
+	if(countWindeploy > 1) { QMbc(this, "File not found", "countWindeploy > 1"); return; }
+
+	QString path_dst = QFileInfo(ui->editFile->text()).path();
+	for(auto &kitEl:checkedKitEls)
 	{
-		QString command = "\"" + windploy + "\" \"" +
-				ui->listWidget->item(i)->text() + "\"\n";
-		bat += command;
-
-		QString path_dst = QFileInfo(ui->listWidget->item(i)->text()).path();
-
-		for(auto &file:addFiles)
+		if(kitEl.type == KitElement::windeploy)
 		{
-			QString file_dst = path_dst + "/" + QFileInfo(file).fileName();
-			QFile::copy(file.filePath(), file_dst);
+			QString command = '"' + kitEl.fileInfo.filePath() + '"' + " " + '"' + ui->editFile->text() + '"' + "\n";
+			bat += command;
+		}
+		else if(kitEl.type == KitElement::additional)
+		{
+			QString file_dst = path_dst + "/" + kitEl.fileInfo.fileName();
+			if(!MyQFileDir::CopyFileWithReplace(kitEl.fileInfo.filePath(), file_dst))
+			{
+				QMbw(this, "Error", "Error copying " + kitEl.fileInfo.filePath());
+			}
 		}
 	}
+
 	//bat += "echo Восмотрите не было ли ошибок в выводе и закройте консоль.\n";
 	//bat += "pause\n";
 
-	QString path = QApplication::applicationDirPath() + "\\deploy.bat";
+	QString fileDeployBat = MyQDifferent::PathToExe() + "/files/deploy.bat";
 
 	ofstream out;
-	out.open(path.toStdString());
+	out.open(fileDeployBat.toStdString());
 	if (out.is_open())
 	{
 		out << bat.toStdString();
 		out.close();
 
-		system(path.toStdString().c_str());
+		system(("\"" + fileDeployBat + "\"").toStdString().c_str());
 	}
 	else QMessageBox::information(this,"Ошибка записи команд","Не удалось записать файл команд вызова windeployqt");
 }
 
-void Windeploy::on_pushButton_clicked()
+void Windeploy::on_btnSelectFile_clicked()
 {
 	auto file = QFileDialog::getOpenFileName(this,"Select file","","Exe (*.exe)");
 	if(file.isEmpty() || !CheckFile(file))
 		return;
 
-	ui->listWidget->clear();
-	ui->listWidget->addItem(file);
+	ui->editFile->setText(file);
 }
 
 void Windeploy::on_pushButtonClear_clicked()
 {
-	ui->listWidget->clear();
+	ui->editFile->clear();
 }
 
 void Windeploy::on_btnDeployKits_clicked()
@@ -254,7 +262,7 @@ void Windeploy::on_btnDeployKits_clicked()
 	auto btnWindep = new QPushButton(KeyWords::windployqtExe);
 	auto btnAddFile = new QPushButton(KeyWords::additionalFile);
 	auto btnAddTemplate = new QPushButton("both");
-	auto btnAddMing73_32 = new QPushButton("Ming73_32");
+	auto btnAddMing73_32 = new QPushButton("template Ming73_32");
 
 	h1->addWidget(btnWindep);
 	h1->addWidget(btnAddFile);
@@ -265,25 +273,29 @@ void Windeploy::on_btnDeployKits_clicked()
 	connect(btnWindep,&QPushButton::clicked,[textEdit](){
 		auto cursor = textEdit->textCursor();
 		cursor.movePosition(QTextCursor::StartOfLine, QTextCursor::MoveAnchor);
-		cursor.insertText(KeyWords::windployqtExeMarker);
+		cursor.insertText(KeyWords::windployqtExe + " file");
 	});
 	connect(btnAddFile,&QPushButton::clicked,[textEdit](){
 		auto cursor = textEdit->textCursor();
 		cursor.movePosition(QTextCursor::StartOfLine, QTextCursor::MoveAnchor);
-		cursor.insertText(KeyWords::additionalFileMarker);
+		cursor.insertText(KeyWords::additionalFile + " file");
 	});
 	connect(btnAddTemplate,&QPushButton::clicked,[textEdit](){
 		auto cursor = textEdit->textCursor();
 		cursor.movePosition(QTextCursor::StartOfLine, QTextCursor::MoveAnchor);
-		cursor.insertText(KeyWords::windployqtExeMarker + "\n" + KeyWords::additionalFileMarker + "\n\n");
+		cursor.insertText(KeyWords::kit + " Qt 5.12.10 mingw73_32\n"
+						  + KeyWords::windployqtExe + " " + "file\n" + KeyWords::additionalFile + " file\n"
+						  + KeyWords::end + "file\n\n");
 	});
 	connect(btnAddMing73_32,&QPushButton::clicked,[textEdit](){
 		auto cursor = textEdit->textCursor();
 		cursor.movePosition(QTextCursor::StartOfLine, QTextCursor::MoveAnchor);
-		cursor.insertText(KeyWords::windployqtExeMarker + "C:\\Qt\\Qt5.12.10\\5.12.10\\mingw73_32\\bin\\windeployqt.exe\n"
-						  + KeyWords::additionalFileMarker + "C:\\Qt\\windeployqt\\Руками добавил для mingw73_32 ++\\libgcc_s_dw2-1.dll\n"
-						  + KeyWords::additionalFileMarker + "C:\\Qt\\windeployqt\\Руками добавил для mingw73_32 ++\\libstdc++-6.dll\n"
-						  + KeyWords::additionalFileMarker + "C:\\Qt\\windeployqt\\Руками добавил для mingw73_32 ++\\libwinpthread-1.dll\n\n");
+		cursor.insertText(KeyWords::kit + " Qt 5.12.10 mingw73_32\n"
+						  + KeyWords::windployqtExe + " " + "C:\\Qt\\Qt5.12.10\\5.12.10\\mingw73_32\\bin\\windeployqt.exe\n"
+						  + KeyWords::additionalFile + " " + "C:\\Qt\\windeployqt\\Руками добавил для mingw73_32 ++\\libgcc_s_dw2-1.dll\n"
+						  + KeyWords::additionalFile + " " + "C:\\Qt\\windeployqt\\Руками добавил для mingw73_32 ++\\libstdc++-6.dll\n"
+						  + KeyWords::additionalFile + " " + "C:\\Qt\\windeployqt\\Руками добавил для mingw73_32 ++\\libwinpthread-1.dll\n"
+						  + KeyWords::end + "\n\n");
 	});
 
 	dialog->resize(900,600);
