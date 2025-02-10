@@ -262,12 +262,16 @@ void Windeploy::on_btnDeployKits_clicked()
 	auto btnWindep = new QPushButton(KeyWords::windployqtExe);
 	auto btnAddFile = new QPushButton(KeyWords::additionalFile);
 	auto btnAddTemplate = new QPushButton("both");
-	auto btnAddMing73_32 = new QPushButton("template Ming73_32");
+	auto btnAddMing73_32 = new QPushButton("Ming73_32");
+	auto btnAddMingw81_32 = new QPushButton("Mingw81_32");
+	auto btnAddMingw81_64 = new QPushButton("Mingw81_64");
 
 	h1->addWidget(btnWindep);
 	h1->addWidget(btnAddFile);
 	h1->addWidget(btnAddTemplate);
 	h1->addWidget(btnAddMing73_32);
+	h1->addWidget(btnAddMingw81_32);
+	h1->addWidget(btnAddMingw81_64);
 	h1->addStretch();
 
 	connect(btnWindep,&QPushButton::clicked,[textEdit](){
@@ -291,10 +295,32 @@ void Windeploy::on_btnDeployKits_clicked()
 		auto cursor = textEdit->textCursor();
 		cursor.movePosition(QTextCursor::StartOfLine, QTextCursor::MoveAnchor);
 		cursor.insertText(KeyWords::kit + " Qt 5.12.10 mingw73_32\n"
-						  + KeyWords::windployqtExe + " " + "C:\\Qt\\Qt5.12.10\\5.12.10\\mingw73_32\\bin\\windeployqt.exe\n"
-						  + KeyWords::additionalFile + " " + "C:\\Qt\\windeployqt\\Руками добавил для mingw73_32 ++\\libgcc_s_dw2-1.dll\n"
-						  + KeyWords::additionalFile + " " + "C:\\Qt\\windeployqt\\Руками добавил для mingw73_32 ++\\libstdc++-6.dll\n"
-						  + KeyWords::additionalFile + " " + "C:\\Qt\\windeployqt\\Руками добавил для mingw73_32 ++\\libwinpthread-1.dll\n"
+						  + KeyWords::windployqtExe + " " +		"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw73_32\\bin\\windeployqt.exe\n"
+						  + KeyWords::additionalFile + " " +	"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw73_32\\bin\\libgcc_s_dw2-1.dll\n"
+						  + KeyWords::additionalFile + " " +	"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw73_32\\bin\\libstdc++-6.dll\n"
+						  + KeyWords::additionalFile + " " +	"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw73_32\\bin\\libwinpthread-1.dll\n"
+						  + KeyWords::end + "\n\n");
+	});
+
+	connect(btnAddMingw81_32,&QPushButton::clicked,[textEdit](){
+		auto cursor = textEdit->textCursor();
+		cursor.movePosition(QTextCursor::StartOfLine, QTextCursor::MoveAnchor);
+		cursor.insertText(KeyWords::kit + " Qt 5.12.10 mingw81_32\n"
+						  + KeyWords::windployqtExe + " " +		"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw81_32\\bin\\windeployqt.exe\n"
+						  + KeyWords::additionalFile + " " +	"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw81_32\\bin\\libgcc_s_dw2-1.dll\n"
+						  + KeyWords::additionalFile + " " +	"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw81_32\\bin\\libstdc++-6.dll\n"
+						  + KeyWords::additionalFile + " " +	"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw81_32\\bin\\libwinpthread-1.dll\n"
+						  + KeyWords::end + "\n\n");
+	});
+
+	connect(btnAddMingw81_64,&QPushButton::clicked,[textEdit](){
+		auto cursor = textEdit->textCursor();
+		cursor.movePosition(QTextCursor::StartOfLine, QTextCursor::MoveAnchor);
+		cursor.insertText(KeyWords::kit + " Qt 5.12.10 mingw81_64\n"
+						  + KeyWords::windployqtExe + " " +		"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw81_64\\bin\\windeployqt.exe\n"
+						  + KeyWords::additionalFile + " " +	"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw81_64\\bin\\libgcc_s_seh-1.dll\n"
+						  + KeyWords::additionalFile + " " +	"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw81_64\\bin\\libstdc++-6.dll\n"
+						  + KeyWords::additionalFile + " " +	"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw81_64\\bin\\libwinpthread-1.dll\n"
 						  + KeyWords::end + "\n\n");
 	});
 
