@@ -52,7 +52,10 @@ Windeploy::Windeploy(QWidget *parent)
 
 	setAcceptDrops(true);
 
-	settingsFile = MyQDifferent::PathToExe()+"/files/settings.ini";
+	filesPath = MyQDifferent::PathToExe()+"/files";
+	if(!QDir().mkpath(filesPath)) QMbError("mkpath error for "+filesPath);
+
+	settingsFile = filesPath+"/settings.ini";
 	QTimer::singleShot(0,this,[this]
 	{
 		QSettings settings(settingsFile, QSettings::IniFormat);
@@ -214,10 +217,11 @@ void Windeploy::on_pushButtonDeploy_clicked()
 		}
 	}
 
-	//bat += "echo Восмотрите не было ли ошибок в выводе и закройте консоль.\n";
+	//bat += "echo Посмотрите не было ли ошибок в выводе и закройте консоль.\n";
 	//bat += "pause\n";
 
-	QString fileDeployBat = MyQDifferent::PathToExe() + "/files/deploy.bat";
+
+	QString fileDeployBat = filesPath+"/deploy.bat";
 
 	ofstream out;
 	out.open(fileDeployBat.toStdString());

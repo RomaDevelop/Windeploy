@@ -28,6 +28,8 @@ public:
 	~Windeploy();
 
 	void KitsToTable();
+private:
+	QString filesPath;
 
 protected:
 	void dragEnterEvent( QDragEnterEvent* event );
