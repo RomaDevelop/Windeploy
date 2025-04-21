@@ -17,28 +17,35 @@
 #include <QRadioButton>
 
 #include <fstream>
-using namespace std;
 
 #include "MyQDialogs.h"
 #include "MyQDifferent.h"
 #include "MyQShortings.h"
 #include "MyQFileDir.h"
 
-bool CheckFile(const QString &file)
+bool CheckKirillic(const QString &fileOrDir)
 {
-	for(auto &c:file)
+	for(auto &c:fileOrDir)
 	{
-		if(!QFileInfo(file).isFile())
-		{
-			QMessageBox::critical(nullptr, "Ошибка", "Объект\n\n["+file+"]\n\nне является файлом!");
-			return false;
-		}
-
 		if((c >= L'А' && c<=L'Я') || (c>=L'а' && c<=L'я'))
 		{
-			QMessageBox::critical(nullptr, "Ошибка", "Имя или путь файла\n\n["+file+"]\n\nсодержит кириллицу!");
+			QMessageBox::critical(nullptr, "Ошибка", "Имя или путь файла\n\n["+fileOrDir+"]\n\nсодержит кириллицу!");
 			return false;
 		}
+	}
+
+	return true;
+}
+
+bool CheckFile(const QString &file)
+{
+	if(!CheckKirillic(file)) return false;
+
+	auto fi = QFileInfo(file);
+	if(!fi.isFile() || fi.suffix() != "exe")
+	{
+		QMessageBox::critical(nullptr, "Ошибка", "Объект\n\n["+file+"]\n\nне является исполняемым файлом!");
+		return false;
 	}
 
 	return true;
@@ -105,7 +112,7 @@ void Windeploy::KitsToTable()
 			hlo->addWidget(rBtn);
 		vlo->addLayout(hlo);
 
-		vector<QCheckBox*> chBoxesOfThisKit;
+		std::vector<QCheckBox*> chBoxesOfThisKit;
 		for(auto &kitElement:kit.elements)
 		{
 			chBoxes.push_back(new QCheckBox(kitElement.text));
@@ -134,7 +141,7 @@ void Windeploy::KitsToTable()
 
 void Windeploy::dragEnterEvent(QDragEnterEvent* event)
 {
-	if(event->mimeData()->hasText() && event->mimeData()->text().right(4) == ".exe")
+	if(event->mimeData()->hasText())
 	{
 		event->acceptProposedAction();
 	}
@@ -142,15 +149,38 @@ void Windeploy::dragEnterEvent(QDragEnterEvent* event)
 
 void Windeploy::dropEvent(QDropEvent* event)
 {
-	QString droped = event->mimeData()->text();
-	if(droped.mid(0,8) == "file:///") droped = droped.remove(0,8);
-		else QMessageBox::warning(this,"Внимание", "Возможно неправильный формат файла. Проверьте и добавьте если нужно вручную!");
-	droped.replace("/","\\");
-
-	if(CheckFile(droped))
+	QString file = event->mimeData()->text();
+	if(file.mid(0,8) != "file:///")
 	{
-		ui->editFile->clear();
-		ui->editFile->setText(droped);
+		QMessageBox::warning(this,"Внимание", "Возможно неправильный формат файла. Проверьте и добавьте если нужно вручную!");
+		return;
+	}
+
+	file = file.remove(0,8);
+	file.replace("/","\\");
+
+	if(CheckKirillic(file))
+	{
+		QFileInfo fi(file);
+		if(fi.isDir())
+		{
+			auto fiList = MyQFileDir::GetAllFilesIncludeSubcats(file, {"exe"});
+			if(fiList.size() == 0) { QMbError("В директории \n\n["+file+"]\n\n отсутсвуют исполняемые файлы"); return; }
+			else if(fiList.size() == 1) file = fiList.first().filePath();
+			else
+			{
+				auto filesList = MyQFileDir::FileInfoListToStrList(fiList);
+				auto res = MyQDialogs::ListDialog("Choose executable file", filesList);
+				file = res.choosedText;
+				if(file.isEmpty()) { QMbError("Не выбраны файлы"); return; }
+			}
+		}
+
+		if(CheckFile(file))
+		{
+			ui->editFile->clear();
+			ui->editFile->setText(file);
+		}
 	}
 }
 
@@ -223,7 +253,7 @@ void Windeploy::on_pushButtonDeploy_clicked()
 
 	QString fileDeployBat = filesPath+"/deploy.bat";
 
-	ofstream out;
+	std::ofstream out;
 	out.open(fileDeployBat.toStdString());
 	if (out.is_open())
 	{
