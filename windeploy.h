@@ -24,7 +24,7 @@ public:
 	std::vector<DeployKit> deployKits;
 	QString settingsFile;
 
-	Windeploy(QWidget *parent = nullptr);
+	Windeploy(int argc, char *argv[], QWidget *parent = nullptr);
 	~Windeploy();
 
 	void KitsToTable();

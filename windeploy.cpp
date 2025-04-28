@@ -15,6 +15,7 @@
 #include <QSettings>
 #include <QTimer>
 #include <QRadioButton>
+#include <QStandardPaths>
 
 #include <fstream>
 
@@ -22,6 +23,7 @@
 #include "MyQDifferent.h"
 #include "MyQShortings.h"
 #include "MyQFileDir.h"
+#include "MyQExecute.h"
 
 bool CheckKirillic(const QString &fileOrDir)
 {
@@ -51,7 +53,7 @@ bool CheckFile(const QString &file)
 	return true;
 }
 
-Windeploy::Windeploy(QWidget *parent)
+Windeploy::Windeploy(int argc, char *argv[], QWidget *parent)
 	: QMainWindow(parent)
 	, ui(new Ui::Windeploy)
 {
@@ -61,6 +63,55 @@ Windeploy::Windeploy(QWidget *parent)
 
 	filesPath = MyQDifferent::PathToExe()+"/files";
 	if(!QDir().mkpath(filesPath)) QMbError("mkpath error for "+filesPath);
+
+	if(argc == 1) ;
+	else if(argc > 2) QMbError("wrong argc ("+QSn(argc)+")");
+	else if(argc == 2)
+	{
+		QString arg = argv[1];
+		if(CheckFile(arg))
+			ui->editFile->setText(arg);
+		else QMbError("Некорректный аргумент ("+arg+")");
+	}
+
+	QTimer::singleShot(0,[](){
+		auto appDataPath = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation);
+		auto thisDirInAppData = appDataPath + "/RomaDevelop/Windeploy";
+		if(!QDir().mkpath(thisDirInAppData))
+			QMbError("error mkpath " + thisDirInAppData);
+		else
+		{
+			#ifdef QT_NO_DEBUG
+				QString fileExePath = thisDirInAppData + "/exe_path_name.txt";
+			#endif
+			#ifdef QT_DEBUG
+				QString fileExePath = thisDirInAppData + "/exe_path_name_debug.txt";
+			#endif
+			bool writeExePath = true;
+			if(QFileInfo(fileExePath).isFile())
+			{
+				auto readRes = MyQFileDir::ReadFile2(fileExePath);
+				if(!readRes.success) QMbError("error reading " + fileExePath);
+				else
+				{
+					if(readRes.content == MyQDifferent::ExeNameWithPath()) writeExePath = false;
+					else
+					{
+						auto answ = QMessageBox::question(nullptr, "Дистрибутив",
+														  "Программа запущена из нового расположения.\n\nСтарое расположение:\n"+readRes.content
+														  +"\n\nНовое расположение:\n"+MyQDifferent::ExeNameWithPath()+ "\n\nСохранить новое расположение по умолчанию?");
+						if(answ == QMessageBox::No)
+							writeExePath = false;
+					}
+				}
+			}
+			if(writeExePath)
+			{
+				if(!MyQFileDir::WriteFile(fileExePath, MyQDifferent::ExeNameWithPath()))
+					QMbError("error writing " + fileExePath);
+			}
+		}
+	});
 
 	settingsFile = filesPath+"/settings.ini";
 	QTimer::singleShot(0,this,[this]
@@ -169,6 +220,9 @@ void Windeploy::dropEvent(QDropEvent* event)
 			else if(fiList.size() == 1) file = fiList.first().filePath();
 			else
 			{
+				if(0) CodeMarkers::to_do("из-за того что ListDialog вызывается прямо в dropEvent место откуда вызвали зависает"
+										 "можно создать слот и там самым сделать развязку");
+
 				auto filesList = MyQFileDir::FileInfoListToStrList(fiList);
 				auto res = MyQDialogs::ListDialog("Choose executable file", filesList);
 				file = res.choosedText;
@@ -187,9 +241,6 @@ void Windeploy::dropEvent(QDropEvent* event)
 void Windeploy::on_pushButtonDeploy_clicked()
 {
 	if(ui->editFile->text().isEmpty()) return;
-
-	QString bat;
-	//bat += "chcp 1251\n";
 
 	QString kitName;
 	std::vector<KitElement> checkedKitEls;
@@ -229,12 +280,22 @@ void Windeploy::on_pushButtonDeploy_clicked()
 
 	if(countWindeploy > 1) { QMbc(this, "File not found", "countWindeploy > 1"); return; }
 
+	QString bat;
+	bat += "@echo off\n";
+
 	QString path_dst = QFileInfo(ui->editFile->text()).path();
 	for(auto &kitEl:checkedKitEls)
 	{
 		if(kitEl.type == KitElement::windeploy)
 		{
 			QString command = '"' + kitEl.fileInfo.filePath() + '"' + " " + '"' + ui->editFile->text() + '"' + "\n";
+			bat +=	"echo launching\n"
+					"echo " + kitEl.fileInfo.filePath() + "\n"
+					"echo with param\n"
+					"echo " + ui->editFile->text() + "\n"
+					"echo.\n"
+					"echo Result:\n"
+					"echo.\n";
 			bat += command;
 		}
 		else if(kitEl.type == KitElement::additional)
@@ -247,9 +308,10 @@ void Windeploy::on_pushButtonDeploy_clicked()
 		}
 	}
 
-	//bat += "echo Посмотрите не было ли ошибок в выводе и закройте консоль.\n";
-	//bat += "pause\n";
-
+	bat += "echo.\n";
+	bat += "echo.\n";
+	bat += "echo Finished\n";
+	bat += "pause\n";
 
 	QString fileDeployBat = filesPath+"/deploy.bat";
 
@@ -260,7 +322,9 @@ void Windeploy::on_pushButtonDeploy_clicked()
 		out << bat.toStdString();
 		out.close();
 
-		system(("\"" + fileDeployBat + "\"").toStdString().c_str());
+		QDesktopServices::openUrl(QUrl::fromLocalFile(fileDeployBat));
+		//MyQExecute::Execute(fileDeployBat);
+		//system(("\"" + fileDeployBat + "\"").toStdString().c_str());
 	}
 	else QMessageBox::information(this,"Ошибка записи команд","Не удалось записать файл команд вызова windeployqt");
 }
