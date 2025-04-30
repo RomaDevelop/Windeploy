@@ -18,18 +18,23 @@ class Windeploy : public QMainWindow
 
 public:
 
+	Windeploy(int argc, char *argv[], QWidget *parent = nullptr);
+	~Windeploy();
+
+private:
+	void WorkArgs(int argc, char *argv[]);
+	void MakeLinkInAppData();
+	void KitsToTable();
+
 	std::vector<QRadioButton*> rBtns;
 	std::vector<QCheckBox*> chBoxes;
 
 	std::vector<DeployKit> deployKits;
 	QString settingsFile;
 
-	Windeploy(int argc, char *argv[], QWidget *parent = nullptr);
-	~Windeploy();
-
-	void KitsToTable();
-private:
 	QString filesPath;
+
+
 
 protected:
 	void dragEnterEvent( QDragEnterEvent* event );

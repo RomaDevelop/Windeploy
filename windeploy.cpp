@@ -64,6 +64,34 @@ Windeploy::Windeploy(int argc, char *argv[], QWidget *parent)
 	filesPath = MyQDifferent::PathToExe()+"/files";
 	if(!QDir().mkpath(filesPath)) QMbError("mkpath error for "+filesPath);
 
+	WorkArgs(argc, argv);
+
+	MakeLinkInAppData();
+
+	settingsFile = filesPath+"/settings.ini";
+	QTimer::singleShot(0,this,[this]
+	{
+		QSettings settings(settingsFile, QSettings::IniFormat);
+		if(settings.contains("deployKits"))
+			deployKits = DeployKit::FromText(settings.value("deployKits").toString());
+
+		KitsToTable();
+	});
+}
+
+Windeploy::~Windeploy()
+{
+	QDir().mkpath(MyQDifferent::PathToExe()+"/files");
+
+	QSettings settings(settingsFile, QSettings::IniFormat);
+
+	settings.setValue("deployKits", DeployKit::ToText(deployKits));
+
+	delete ui;
+}
+
+void Windeploy::WorkArgs(int argc, char *argv[])
+{
 	if(argc == 1) ;
 	else if(argc > 2) QMbError("wrong argc ("+QSn(argc)+")");
 	else if(argc == 2)
@@ -73,8 +101,11 @@ Windeploy::Windeploy(int argc, char *argv[], QWidget *parent)
 			ui->editFile->setText(arg);
 		else QMbError("Некорректный аргумент ("+arg+")");
 	}
+}
 
-	QTimer::singleShot(0,[](){
+void Windeploy::MakeLinkInAppData()
+{
+	QTimer::singleShot(0,[](){ // делается через сингл шот чтобы сначала высветилось окно, а затем на фоне его сообщение
 		auto appDataPath = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation);
 		auto thisDirInAppData = appDataPath + "/RomaDevelop/Windeploy";
 		if(!QDir().mkpath(thisDirInAppData))
@@ -112,27 +143,6 @@ Windeploy::Windeploy(int argc, char *argv[], QWidget *parent)
 			}
 		}
 	});
-
-	settingsFile = filesPath+"/settings.ini";
-	QTimer::singleShot(0,this,[this]
-	{
-		QSettings settings(settingsFile, QSettings::IniFormat);
-		if(settings.contains("deployKits"))
-			deployKits = DeployKit::FromText(settings.value("deployKits").toString());
-
-		KitsToTable();
-	});
-}
-
-Windeploy::~Windeploy()
-{
-	QDir().mkpath(MyQDifferent::PathToExe()+"/files");
-
-	QSettings settings(settingsFile, QSettings::IniFormat);
-
-	settings.setValue("deployKits", DeployKit::ToText(deployKits));
-
-	delete ui;
 }
 
 void Windeploy::KitsToTable()
