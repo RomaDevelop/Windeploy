@@ -33,7 +33,7 @@ struct DeployKit
 	QString name;
 	std::vector<KitElement> elements;
 
-	static std::vector<DeployKit> FromText(QString text);
+	static std::vector<DeployKit> FromText(QString text, bool &ok);
 	static QString ToText(const std::vector<DeployKit> &kits);
 	QString ToText() const;
 };

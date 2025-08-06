@@ -73,7 +73,7 @@ Windeploy::Windeploy(int argc, char *argv[], QWidget *parent)
 	{
 		QSettings settings(settingsFile, QSettings::IniFormat);
 		if(settings.contains("deployKits"))
-			deployKits = DeployKit::FromText(settings.value("deployKits").toString());
+			deployKitsStr = settings.value("deployKits").toString();
 
 		KitsToTable();
 	});
@@ -85,7 +85,7 @@ Windeploy::~Windeploy()
 
 	QSettings settings(settingsFile, QSettings::IniFormat);
 
-	settings.setValue("deployKits", DeployKit::ToText(deployKits));
+	settings.setValue("deployKits", deployKitsStr);
 
 	delete ui;
 }
@@ -145,8 +145,12 @@ void Windeploy::MakeLinkInAppData()
 	});
 }
 
-void Windeploy::KitsToTable()
+bool Windeploy::KitsToTable()
 {
+	bool ok;
+	std::vector<DeployKit> deployKits = DeployKit::FromText(deployKitsStr, ok);
+	if(!ok) return false;
+
 	ui->tableWidget->horizontalHeader()->hide();
 
 	rBtns.clear();
@@ -198,6 +202,8 @@ void Windeploy::KitsToTable()
 
 	ui->tableWidget->resizeRowsToContents();
 	ui->tableWidget->resizeColumnsToContents();
+
+	return true;
 }
 
 void Windeploy::dragEnterEvent(QDragEnterEvent* event)
@@ -357,14 +363,17 @@ void Windeploy::on_btnDeployKits_clicked()
 {
 	QDialog *dialog = new QDialog;
 	dialog->setWindowTitle("Deploy kits");
-	QVBoxLayout *all  = new QVBoxLayout(dialog);
+	dialog->setWindowFlag(Qt::WindowCloseButtonHint, false);
+	QVBoxLayout *vloMain  = new QVBoxLayout(dialog);
 	QHBoxLayout *h1 = new QHBoxLayout;
 	QHBoxLayout *h2 = new QHBoxLayout;
-	all->addLayout(h1);
-	all->addLayout(h2);
+	QHBoxLayout *hlo3 = new QHBoxLayout;
+	vloMain->addLayout(h1);
+	vloMain->addLayout(h2);
+	vloMain->addLayout(hlo3);
 
 	QTextEdit *textEdit = new QTextEdit;
-	textEdit->setText(DeployKit::ToText(deployKits));
+	textEdit->setText(deployKitsStr);
 	h2->addWidget(textEdit);
 
 	auto btnWindep = new QPushButton(KeyWords::windployqtExe);
@@ -432,11 +441,25 @@ void Windeploy::on_btnDeployKits_clicked()
 						  + KeyWords::end + "\n\n");
 	});
 
+	auto btnSave = new QPushButton("Save");
+	auto btnAbort = new QPushButton("Abort");
+
+	hlo3->addStretch();
+	hlo3->addWidget(btnSave);
+	hlo3->addWidget(btnAbort);
+
+	connect(btnSave,&QPushButton::clicked,[this, dialog, textEdit](){
+		deployKitsStr = textEdit->toPlainText();
+		if(KitsToTable())
+			dialog->close();
+	});
+	connect(btnAbort,&QPushButton::clicked,[this, dialog](){
+		if(KitsToTable())
+			dialog->close();
+	});
+
 	dialog->resize(900,600);
 	dialog->exec();
-
-	deployKits = DeployKit::FromText(textEdit->toPlainText());
-	KitsToTable();
 
 	delete dialog;
 }

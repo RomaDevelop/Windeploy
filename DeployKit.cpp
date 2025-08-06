@@ -22,8 +22,9 @@ KitElement KitElement::FromText(QString text)
 	return el;
 }
 
-std::vector<DeployKit> DeployKit::FromText(QString text)
+std::vector<DeployKit> DeployKit::FromText(QString text, bool &ok)
 {
+	ok = false;
 	std::vector<DeployKit> kitsVector;
 	auto rows = text.split("\n", QString::SkipEmptyParts);
 
@@ -53,15 +54,16 @@ std::vector<DeployKit> DeployKit::FromText(QString text)
 			currentKit->name = KeyWords::unnamedKit;
 		}
 
-		if(!currentKit) { QMbc(nullptr, "Error", "!currentKit"); return {}; }
+		if(!currentKit) { QMbc(nullptr, "Error loading kits", "Error loading kits: nullptr currentKit"); return {}; }
 
 		KitElement kitElementOfRow = KitElement::FromText(row);
 		if(kitElementOfRow.type == KitElement::undefined)
-		{ QMbc(nullptr, "Error", "undefined type kit element in row ["+row+"]"); return {}; }
+		{ QMbc(nullptr, "Error loading kits", "Error loading kits: undefined type kit element in row ["+row+"]"); return {}; }
 
 		currentKit->elements.emplace_back(std::move(kitElementOfRow));
 	}
 
+	ok = true;
 	return kitsVector;
 }
 

@@ -24,17 +24,15 @@ public:
 private:
 	void WorkArgs(int argc, char *argv[]);
 	void MakeLinkInAppData();
-	void KitsToTable();
+	bool KitsToTable();
 
 	std::vector<QRadioButton*> rBtns;
 	std::vector<QCheckBox*> chBoxes;
 
-	std::vector<DeployKit> deployKits;
-	QString settingsFile;
+	QString deployKitsStr;
 
 	QString filesPath;
-
-
+	QString settingsFile;
 
 protected:
 	void dragEnterEvent( QDragEnterEvent* event );
