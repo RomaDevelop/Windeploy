@@ -15,7 +15,6 @@
 #include <QSettings>
 #include <QTimer>
 #include <QRadioButton>
-#include <QStandardPaths>
 
 #include <fstream>
 
@@ -24,6 +23,7 @@
 #include "MyQShortings.h"
 #include "MyQFileDir.h"
 #include "MyQExecute.h"
+#include "AppDataWork.h"
 
 bool CheckKirillic(const QString &fileOrDir)
 {
@@ -53,9 +53,9 @@ bool CheckFile(const QString &file)
 	return true;
 }
 
-Windeploy::Windeploy(int argc, char *argv[], QWidget *parent)
-	: QMainWindow(parent)
-	, ui(new Ui::Windeploy)
+Windeploy::Windeploy(int argc, char *argv[], QWidget *parent):
+	QMainWindow(parent),
+	ui(new Ui::Windeploy)
 {
 	ui->setupUi(this);
 
@@ -66,7 +66,7 @@ Windeploy::Windeploy(int argc, char *argv[], QWidget *parent)
 
 	WorkArgs(argc, argv);
 
-	MakeLinkInAppData();
+	AppDataWork::MakeLinkInAppData(ADWN::RomaDevelop, ADWN::Windeploy);
 
 	settingsFile = filesPath+"/settings.ini";
 	QTimer::singleShot(0,this,[this]
@@ -101,48 +101,6 @@ void Windeploy::WorkArgs(int argc, char *argv[])
 			ui->editFile->setText(arg);
 		else QMbError("Некорректный аргумент ("+arg+")");
 	}
-}
-
-void Windeploy::MakeLinkInAppData()
-{
-	QTimer::singleShot(0,[](){ // делается через сингл шот чтобы сначала высветилось окно, а затем на фоне его сообщение
-		auto appDataPath = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation);
-		auto thisDirInAppData = appDataPath + "/RomaDevelop/Windeploy";
-		if(!QDir().mkpath(thisDirInAppData))
-			QMbError("error mkpath " + thisDirInAppData);
-		else
-		{
-			#ifdef QT_NO_DEBUG
-				QString fileExePath = thisDirInAppData + "/exe_path_name.txt";
-			#endif
-			#ifdef QT_DEBUG
-				QString fileExePath = thisDirInAppData + "/exe_path_name_debug.txt";
-			#endif
-			bool writeExePath = true;
-			if(QFileInfo(fileExePath).isFile())
-			{
-				auto readRes = MyQFileDir::ReadFile2(fileExePath);
-				if(!readRes.success) QMbError("error reading " + fileExePath);
-				else
-				{
-					if(readRes.content == MyQDifferent::ExeNameWithPath()) writeExePath = false;
-					else
-					{
-						auto answ = QMessageBox::question(nullptr, "Дистрибутив",
-														  "Программа запущена из нового расположения.\n\nСтарое расположение:\n"+readRes.content
-														  +"\n\nНовое расположение:\n"+MyQDifferent::ExeNameWithPath()+ "\n\nСохранить новое расположение по умолчанию?");
-						if(answ == QMessageBox::No)
-							writeExePath = false;
-					}
-				}
-			}
-			if(writeExePath)
-			{
-				if(!MyQFileDir::WriteFile(fileExePath, MyQDifferent::ExeNameWithPath()))
-					QMbError("error writing " + fileExePath);
-			}
-		}
-	});
 }
 
 bool Windeploy::KitsToTable()

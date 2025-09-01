@@ -23,7 +23,6 @@ public:
 
 private:
 	void WorkArgs(int argc, char *argv[]);
-	void MakeLinkInAppData();
 	bool KitsToTable();
 
 	std::vector<QRadioButton*> rBtns;
