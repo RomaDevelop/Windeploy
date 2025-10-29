@@ -53,7 +53,7 @@ bool CheckFile(const QString &file)
 	return true;
 }
 
-Windeploy::Windeploy(int argc, char *argv[], QWidget *parent):
+Windeploy::Windeploy(const QStringList &args, QWidget *parent):
 	QMainWindow(parent),
 	ui(new Ui::Windeploy)
 {
@@ -64,9 +64,9 @@ Windeploy::Windeploy(int argc, char *argv[], QWidget *parent):
 	filesPath = MyQDifferent::PathToExe()+"/files";
 	if(!QDir().mkpath(filesPath)) QMbError("mkpath error for "+filesPath);
 
-	WorkArgs(argc, argv);
+	WorkArgs(args);
 
-	AppDataWork::MakeLinkInAppData(ADWN::RomaDevelop, ADWN::Windeploy);
+	AppDataWork::MakeFolderAndLinkInAppData(ADWN::RomaDevelop, ADWN::Windeploy);
 
 	settingsFile = filesPath+"/settings.ini";
 	QTimer::singleShot(0,this,[this]
@@ -90,13 +90,13 @@ Windeploy::~Windeploy()
 	delete ui;
 }
 
-void Windeploy::WorkArgs(int argc, char *argv[])
+void Windeploy::WorkArgs(const QStringList &args)
 {
-	if(argc == 1) ;
-	else if(argc > 2) QMbError("wrong argc ("+QSn(argc)+")");
-	else if(argc == 2)
+	if(args.size() == 1) ;
+	else if(args.size() > 2) QMbError("wrong argc ("+QSn(args.size())+")");
+	else if(args.size() == 2)
 	{
-		QString arg = argv[1];
+		QString arg = args[1];
 		if(CheckFile(arg))
 			ui->editFile->setText(arg);
 		else QMbError("Некорректный аргумент ("+arg+")");
