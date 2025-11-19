@@ -24,6 +24,7 @@
 #include "MyQFileDir.h"
 #include "MyQExecute.h"
 #include "AppDataWork.h"
+#include "ReleaseMaker.h"
 
 bool CheckKirillic(const QString &fileOrDir)
 {
@@ -177,38 +178,41 @@ void Windeploy::dropEvent(QDropEvent* event)
 	QString file = event->mimeData()->text();
 	if(file.mid(0,8) != "file:///")
 	{
-		QMessageBox::warning(this,"Внимание", "Возможно неправильный формат файла. Проверьте и добавьте если нужно вручную!");
+		QMessageBox::warning(this,"Внимание",
+							 "Возможно неправильный формат файла. Проверьте и добавьте если нужно вручную!");
 		return;
 	}
 
 	file = file.remove(0,8);
 	file.replace("/","\\");
 
-	if(CheckKirillic(file))
+	if(!CheckKirillic(file)) return;
+
+	QFileInfo fi(file);
+	if(fi.isDir())
 	{
-		QFileInfo fi(file);
-		if(fi.isDir())
-		{
-			auto fiList = MyQFileDir::GetAllFilesIncludeSubcats(file, {"exe"});
-			if(fiList.size() == 0) { QMbError("В директории \n\n["+file+"]\n\n отсутсвуют исполняемые файлы"); return; }
-			else if(fiList.size() == 1) file = fiList.first().filePath();
-			else
-			{
-				if(0) CodeMarkers::to_do("из-за того что ListDialog вызывается прямо в dropEvent место откуда вызвали зависает"
-										 "можно создать слот и там самым сделать развязку");
+		auto fiList = MyQFileDir::GetAllFilesIncludeSubcats(file, {"exe"});
 
-				auto filesList = MyQFileDir::FileInfoListToStrList(fiList);
-				auto res = MyQDialogs::ListDialog("Choose executable file", filesList);
-				file = res.choosedText;
-				if(file.isEmpty()) { QMbError("Не выбраны файлы"); return; }
-			}
-		}
+		if(0) CodeMarkers::to_do("а нужно еще и каждый файл проверить на CheckKirillic!");
 
-		if(CheckFile(file))
+		if(fiList.size() == 0) { QMbInfo("В директории \n\n["+file+"]\n\nотсутсвуют исполняемые файлы"); return; }
+		else if(fiList.size() == 1) file = fiList.first().filePath();
+		else
 		{
-			ui->editFile->clear();
-			ui->editFile->setText(file);
+			if(0) CodeMarkers::to_do("из-за того что ListDialog вызывается прямо в dropEvent место откуда "
+									 "вызвали зависает можно создать слот и там самым сделать развязку");
+
+			auto filesList = MyQFileDir::FileInfoListToStrList(fiList);
+			auto res = MyQDialogs::ListDialog("Choose executable file", filesList);
+			file = res.chosenText;
+			if(file.isEmpty()) { QMbInfo("Не выбраны файлы"); return; }
 		}
+	}
+
+	if(CheckFile(file))
+	{
+		ui->editFile->clear();
+		ui->editFile->setText(file);
 	}
 }
 
@@ -370,33 +374,33 @@ void Windeploy::on_btnDeployKits_clicked()
 		auto cursor = textEdit->textCursor();
 		cursor.movePosition(QTextCursor::StartOfLine, QTextCursor::MoveAnchor);
 		cursor.insertText(KeyWords::kit + " Qt 5.12.10 mingw73_32\n"
-						  + KeyWords::windployqtExe + " " +		"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw73_32\\bin\\windeployqt.exe\n"
-						  + KeyWords::additionalFile + " " +	"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw73_32\\bin\\libgcc_s_dw2-1.dll\n"
-						  + KeyWords::additionalFile + " " +	"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw73_32\\bin\\libstdc++-6.dll\n"
-						  + KeyWords::additionalFile + " " +	"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw73_32\\bin\\libwinpthread-1.dll\n"
-						  + KeyWords::end + "\n\n");
+			+ KeyWords::windployqtExe  + " " +	"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw73_32\\bin\\windeployqt.exe\n"
+			+ KeyWords::additionalFile + " " +	"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw73_32\\bin\\libgcc_s_dw2-1.dll\n"
+			+ KeyWords::additionalFile + " " +	"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw73_32\\bin\\libstdc++-6.dll\n"
+			+ KeyWords::additionalFile + " " +	"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw73_32\\bin\\libwinpthread-1.dll\n"
+			+ KeyWords::end + "\n\n");
 	});
 
 	connect(btnAddMingw81_32,&QPushButton::clicked,[textEdit](){
 		auto cursor = textEdit->textCursor();
 		cursor.movePosition(QTextCursor::StartOfLine, QTextCursor::MoveAnchor);
 		cursor.insertText(KeyWords::kit + " Qt 5.12.10 mingw81_32\n"
-						  + KeyWords::windployqtExe + " " +		"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw81_32\\bin\\windeployqt.exe\n"
-						  + KeyWords::additionalFile + " " +	"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw81_32\\bin\\libgcc_s_dw2-1.dll\n"
-						  + KeyWords::additionalFile + " " +	"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw81_32\\bin\\libstdc++-6.dll\n"
-						  + KeyWords::additionalFile + " " +	"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw81_32\\bin\\libwinpthread-1.dll\n"
-						  + KeyWords::end + "\n\n");
+			+ KeyWords::windployqtExe  + " " +	"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw81_32\\bin\\windeployqt.exe\n"
+			+ KeyWords::additionalFile + " " +	"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw81_32\\bin\\libgcc_s_dw2-1.dll\n"
+			+ KeyWords::additionalFile + " " +	"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw81_32\\bin\\libstdc++-6.dll\n"
+			+ KeyWords::additionalFile + " " +	"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw81_32\\bin\\libwinpthread-1.dll\n"
+			+ KeyWords::end + "\n\n");
 	});
 
 	connect(btnAddMingw81_64,&QPushButton::clicked,[textEdit](){
 		auto cursor = textEdit->textCursor();
 		cursor.movePosition(QTextCursor::StartOfLine, QTextCursor::MoveAnchor);
 		cursor.insertText(KeyWords::kit + " Qt 5.12.10 mingw81_64\n"
-						  + KeyWords::windployqtExe + " " +		"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw81_64\\bin\\windeployqt.exe\n"
-						  + KeyWords::additionalFile + " " +	"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw81_64\\bin\\libgcc_s_seh-1.dll\n"
-						  + KeyWords::additionalFile + " " +	"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw81_64\\bin\\libstdc++-6.dll\n"
-						  + KeyWords::additionalFile + " " +	"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw81_64\\bin\\libwinpthread-1.dll\n"
-						  + KeyWords::end + "\n\n");
+			+ KeyWords::windployqtExe  + " " +	"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw81_64\\bin\\windeployqt.exe\n"
+			+ KeyWords::additionalFile + " " +	"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw81_64\\bin\\libgcc_s_seh-1.dll\n"
+			+ KeyWords::additionalFile + " " +	"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw81_64\\bin\\libstdc++-6.dll\n"
+			+ KeyWords::additionalFile + " " +	"C:\\Qt\\Qt5.12.10\\5.12.10\\mingw81_64\\bin\\libwinpthread-1.dll\n"
+			+ KeyWords::end + "\n\n");
 	});
 
 	auto btnSave = new QPushButton("Save");
