@@ -22,6 +22,7 @@
 #include "MyQDifferent.h"
 #include "MyQShortings.h"
 #include "MyQFileDir.h"
+#include "MyQDropEvent.h"
 #include "MyQExecute.h"
 #include "AppDataWork.h"
 #include "ReleaseMaker.h"
@@ -175,16 +176,20 @@ void Windeploy::dragEnterEvent(QDragEnterEvent* event)
 
 void Windeploy::dropEvent(QDropEvent* event)
 {
-	QString file = event->mimeData()->text();
-	if(file.mid(0,8) != "file:///")
+	auto dropedObj = MyQDropEvent::GetDropedObject(event);
+	if(dropedObj.error.isEmpty() == false)
 	{
-		QMessageBox::warning(this,"Внимание",
-							 "Возможно неправильный формат файла. Проверьте и добавьте если нужно вручную!");
+		QMbError("Ошибка обработки перетаскивания: "+dropedObj.error);
 		return;
 	}
 
-	file = file.remove(0,8);
-	file.replace("/","\\");
+	if(dropedObj.type != DropedObjectType::dir and dropedObj.type != DropedObjectType::file)
+	{
+		QMbError("Неподдерживаемый тип объекта: "+dropedObj.initialValue);
+		return;
+	}
+
+	QString file = dropedObj.workedValue;
 
 	if(!CheckKirillic(file)) return;
 
